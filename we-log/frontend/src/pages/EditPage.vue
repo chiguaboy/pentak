@@ -1,8 +1,8 @@
 <template>
   <div class="page-container">
     <div class="page-header">
-      <h2>编辑动态</h2>
-      <RouterLink to="/feed" class="button-secondary">返回列表</RouterLink>
+      <div class="page-title">编辑动态</div>
+      <RouterLink to="/feed" class="button-secondary">返回</RouterLink>
     </div>
 
     <div v-if="loading" class="card-subtitle">加载中...</div>

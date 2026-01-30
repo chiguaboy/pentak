@@ -2,11 +2,11 @@
   <div class="page-container">
     <div class="page-header">
       <div>
-        <h2>动态详情</h2>
+        <div class="page-title">动态详情</div>
         <p class="card-subtitle">查看完整图文内容</p>
       </div>
       <div>
-        <RouterLink to="/feed" class="button-secondary">返回列表</RouterLink>
+        <RouterLink to="/feed" class="button-secondary">返回</RouterLink>
         <RouterLink :to="`/edit/${post?.id}`" class="button-primary">编辑</RouterLink>
       </div>
     </div>

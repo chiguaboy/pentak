@@ -2,10 +2,10 @@
   <div class="page-container">
     <div class="page-header">
       <div>
-        <h2>动态广场</h2>
+        <div class="page-title">动态</div>
         <p class="card-subtitle">欢迎回来，{{ user }}</p>
       </div>
-      <RouterLink to="/new" class="button-primary">发布动态</RouterLink>
+      <RouterLink to="/new" class="button-primary">发帖</RouterLink>
     </div>
 
     <div class="month-filter">

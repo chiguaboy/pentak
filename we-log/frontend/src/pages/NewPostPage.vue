@@ -1,8 +1,8 @@
 <template>
   <div class="page-container">
     <div class="page-header">
-      <h2>发布动态</h2>
-      <RouterLink to="/feed" class="button-secondary">返回列表</RouterLink>
+      <div class="page-title">发布动态</div>
+      <RouterLink to="/feed" class="button-secondary">返回</RouterLink>
     </div>
 
     <div class="form-row">
