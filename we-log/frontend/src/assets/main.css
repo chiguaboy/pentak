@@ -31,55 +31,37 @@ a {
   z-index: 10;
   background: #ffffff;
   border-bottom: 1px solid #e6ecf0;
-  padding: 12px 16px;
+  padding: 10px 12px;
   display: flex;
-  justify-content: space-between;
   align-items: center;
-}
-
-.logo {
-  font-weight: 700;
-  font-size: 18px;
-  color: #1d9bf0;
-}
-
-.icon-button {
-  border: none;
-  background: #f7f9f9;
-  color: #0f1419;
-  padding: 6px 14px;
-  border-radius: 999px;
-  font-weight: 600;
-  cursor: pointer;
 }
 
 .main-content {
   flex: 1;
-  padding: 16px 12px 88px;
+  padding: 16px 12px 96px;
   display: flex;
   justify-content: center;
 }
 
-.bottom-tab {
+.top-bar #top-bar-slot {
+  width: 100%;
+}
+
+.fab {
   position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  background: #ffffff;
-  border-top: 1px solid #e6ecf0;
-  padding: 10px 24px 18px;
+  right: 20px;
+  bottom: 28px;
+  width: 54px;
+  height: 54px;
+  background: #1d9bf0;
+  color: #ffffff;
+  border-radius: 50%;
   display: flex;
-  justify-content: space-around;
-  gap: 12px;
-}
-
-.tab-item {
-  font-weight: 600;
-  color: #536471;
-}
-
-.tab-item.router-link-active {
-  color: #1d9bf0;
+  align-items: center;
+  justify-content: center;
+  font-size: 28px;
+  font-weight: 700;
+  box-shadow: 0 12px 24px rgba(29, 155, 240, 0.35);
 }
 
 .page-container {
@@ -245,6 +227,10 @@ a {
   gap: 12px;
   align-items: center;
   margin-bottom: 16px;
+}
+
+.top-bar .month-filter {
+  margin-bottom: 0;
 }
 
 .preview-list {

@@ -1,16 +1,12 @@
 <template>
   <div class="app-shell">
     <header v-if="showNav" class="top-bar">
-      <div class="logo">we-log</div>
-      <button class="icon-button" @click="logout">退出</button>
+      <div id="top-bar-slot"></div>
     </header>
     <main class="main-content">
       <RouterView />
     </main>
-    <nav v-if="showNav" class="bottom-tab">
-      <RouterLink to="/feed" class="tab-item">主页</RouterLink>
-      <RouterLink to="/new" class="tab-item">发布</RouterLink>
-    </nav>
+    <RouterLink v-if="showNav" to="/new" class="fab">+</RouterLink>
   </div>
 </template>
 

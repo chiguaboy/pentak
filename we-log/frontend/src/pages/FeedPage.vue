@@ -1,17 +1,18 @@
 <template>
   <div class="page-container">
+    <Teleport to="#top-bar-slot">
+      <div class="month-filter">
+        <input v-model="month" type="month" class="input-field" />
+        <button class="button-secondary" @click="loadPosts">筛选</button>
+        <button class="link-button" @click="resetMonth">清除</button>
+      </div>
+    </Teleport>
     <div class="page-header">
       <div>
         <div class="page-title">动态</div>
         <p class="card-subtitle">欢迎回来，{{ user }}</p>
       </div>
       <RouterLink to="/new" class="button-primary">发帖</RouterLink>
-    </div>
-
-    <div class="month-filter">
-      <input v-model="month" type="month" class="input-field" />
-      <button class="button-secondary" @click="loadPosts">筛选</button>
-      <button class="link-button" @click="resetMonth">清除</button>
     </div>
 
     <div v-if="loading" class="card-subtitle">加载中...</div>
