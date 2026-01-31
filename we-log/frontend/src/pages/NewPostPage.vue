@@ -17,8 +17,8 @@
     </div>
 
     <div class="form-row">
-      <label class="helper-text">上传图片（最多 9 张）</label>
-      <input type="file" accept="image/*" multiple @change="handleFiles" />
+      <!-- <label class="helper-text">上传图片（最多 9 张）</label> -->
+      <input type="file" accept="image/*" multiple class="file-input" @change="handleFiles" />
       <div class="preview-list">
         <img v-for="(img, index) in images" :key="index" :src="img" class="preview-item" />
       </div>
@@ -48,9 +48,9 @@ const message = ref("");
 
 const handleFiles = async (event) => {
   const files = Array.from(event.target.files || []);
-  const combined = [...images.value, ...files];
-  const limited = combined.slice(0, 9);
-  images.value = await Promise.all(limited.map((file) => toBase64(file)));
+  const encoded = await Promise.all(files.map((file) => toBase64(file)));
+  images.value = [...images.value, ...encoded].slice(0, 9);
+  event.target.value = "";
 };
 
 const toBase64 = (file) => new Promise((resolve, reject) => {

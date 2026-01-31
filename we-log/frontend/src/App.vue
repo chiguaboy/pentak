@@ -3,10 +3,10 @@
     <header v-if="showNav" class="top-bar">
       <div id="top-bar-slot"></div>
     </header>
-    <main class="main-content">
+    <main class="main-content" :class="{ 'no-scroll': isLogin, 'no-x-scroll': isDetail }">
       <RouterView />
     </main>
-    <RouterLink v-if="showNav" to="/new" class="fab">+</RouterLink>
+    <RouterLink v-if="showFab" to="/new" class="fab">+</RouterLink>
   </div>
 </template>
 
@@ -17,7 +17,10 @@ import { useRoute, useRouter } from "vue-router";
 const route = useRoute();
 const router = useRouter();
 
-const showNav = computed(() => route.path !== "/login");
+const isLogin = computed(() => route.path === "/login");
+const isDetail = computed(() => route.path.startsWith("/detail/"));
+const showNav = computed(() => !isLogin.value);
+const showFab = computed(() => !isLogin.value && !isDetail.value && !route.path.startsWith("/edit/"));
 
 const handleVisibility = () => {
   if (document.hidden) {

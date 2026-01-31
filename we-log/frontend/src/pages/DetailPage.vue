@@ -16,10 +16,19 @@
     <div v-else>
       <div class="card-title">{{ post.user }}</div>
       <div class="card-subtitle">{{ post.createdAt }}</div>
-      <p style="margin-top: 16px;">{{ post.content }}</p>
+      <p class="detail-content">{{ post.content }}</p>
       <div v-if="post.images?.length" class="image-grid">
-        <img v-for="(img, index) in post.images" :key="index" :src="img" alt="图片" />
+        <img
+          v-for="(img, index) in post.images"
+          :key="index"
+          :src="img"
+          alt="图片"
+          @click="openPreview(img)"
+        />
       </div>
+    </div>
+    <div v-if="previewImage" class="image-preview-overlay" @click="closePreview">
+      <img :src="previewImage" alt="预览图片" class="image-preview" />
     </div>
   </div>
 </template>
@@ -32,6 +41,7 @@ import { fetchPost } from "../services/api";
 const route = useRoute();
 const post = ref(null);
 const loading = ref(false);
+const previewImage = ref("");
 
 const loadPost = async () => {
   loading.value = true;
@@ -43,4 +53,12 @@ const loadPost = async () => {
 };
 
 onMounted(loadPost);
+
+const openPreview = (img) => {
+  previewImage.value = img;
+};
+
+const closePreview = () => {
+  previewImage.value = "";
+};
 </script>

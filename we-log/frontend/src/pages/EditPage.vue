@@ -19,9 +19,12 @@
 
       <div class="form-row">
         <label class="helper-text">替换图片（最多 9 张）</label>
-        <input type="file" accept="image/*" multiple @change="handleFiles" />
+        <input type="file" accept="image/*" multiple class="file-input" @change="handleFiles" />
         <div class="preview-list">
-          <img v-for="(img, index) in images" :key="index" :src="img" class="preview-item" />
+          <div v-for="(img, index) in images" :key="index" class="preview-wrap">
+            <img :src="img" class="preview-item" @click="openPreview(img)" />
+            <button type="button" class="preview-remove" @click="removeImage(index)">-</button>
+          </div>
         </div>
       </div>
 
@@ -33,6 +36,9 @@
       <p v-if="message" class="helper-text" style="color: #1d9bf0; margin-top: 12px;">
         {{ message }}
       </p>
+    </div>
+    <div v-if="previewImage" class="image-preview-overlay" @click="closePreview">
+      <img :src="previewImage" alt="预览图片" class="image-preview" />
     </div>
   </div>
 </template>
@@ -49,11 +55,13 @@ const content = ref("");
 const images = ref([]);
 const original = ref({ content: "", images: [] });
 const message = ref("");
+const previewImage = ref("");
 
 const handleFiles = async (event) => {
   const files = Array.from(event.target.files || []);
-  const limited = files.slice(0, 9);
-  images.value = await Promise.all(limited.map((file) => toBase64(file)));
+  const encoded = await Promise.all(files.map((file) => toBase64(file)));
+  images.value = [...images.value, ...encoded].slice(0, 9);
+  event.target.value = "";
 };
 
 const toBase64 = (file) => new Promise((resolve, reject) => {
@@ -93,4 +101,16 @@ const save = async () => {
 };
 
 onMounted(loadPost);
+
+const openPreview = (img) => {
+  previewImage.value = img;
+};
+
+const closePreview = () => {
+  previewImage.value = "";
+};
+
+const removeImage = (index) => {
+  images.value = images.value.filter((_, currentIndex) => currentIndex !== index);
+};
 </script>
