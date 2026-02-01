@@ -14,18 +14,18 @@ export const fetchPosts = async (month) => {
   return data;
 };
 
-export const fetchPost = async (id) => {
-  const { data } = await api.get(`/posts/${id}`);
+export const fetchPost = async (id, month) => {
+  const { data } = await api.get(`/posts/${id}`, { params: { month } });
   return data;
 };
 
-export const createPost = async (payload) => {
-  const { data } = await api.post("/posts", payload);
+export const createPost = async (payload, month) => {
+  const { data } = await api.post("/posts", { ...payload, month });
   return data;
 };
 
-export const updatePost = async (id, payload) => {
-  const { data } = await api.put(`/posts/${id}`, payload);
+export const updatePost = async (id, payload, month) => {
+  const { data } = await api.put(`/posts/${id}`, payload, { params: { month } });
   return data;
 };
 

@@ -17,7 +17,10 @@
         v-for="post in posts"
         :key="post.id"
         class="card"
-        :class="post.images?.length ? 'card--with-images' : 'card--no-images'"
+        :class="[
+          post.images?.length ? 'card--with-images' : 'card--no-images',
+          hasComments(post.comments) ? 'card--with-comments' : '',
+        ]"
       >
         <div class="card-header">
           <div class="card-meta">
@@ -25,8 +28,18 @@
             <div class="card-subtitle">{{ post.createdAt }}</div>
           </div>
           <div class="card-actions">
-            <RouterLink :to="`/detail/${post.id}`" class="link-button">查看</RouterLink>
-            <RouterLink :to="`/edit/${post.id}`" class="link-button">编辑</RouterLink>
+            <RouterLink
+              :to="{ path: `/detail/${post.id}`, query: { month } }"
+              class="link-button"
+            >
+              查看
+            </RouterLink>
+            <RouterLink
+              :to="{ path: `/edit/${post.id}`, query: { month } }"
+              class="link-button"
+            >
+              编辑
+            </RouterLink>
           </div>
         </div>
         <div class="card-content">{{ post.content }}</div>
@@ -38,6 +51,17 @@
             alt="图片"
             @click="openPreview(img)"
           />
+        </div>
+        <div v-if="hasComments(post.comments)" class="card-comments">
+          <div
+            v-for="(comment, index) in getLatestComments(post.comments)"
+            :key="comment.id || `${post.id}-comment-${index}`"
+            class="card-comment"
+          >
+            <span class="card-comment-user">{{ comment.user }}</span>
+            <span class="card-comment-separator">：</span>
+            <span class="card-comment-content">{{ formatCommentText(comment.content) }}</span>
+          </div>
         </div>
       </div>
     </div>
@@ -53,11 +77,42 @@ import { fetchPosts } from "../services/api";
 
 const user = localStorage.getItem("we-log-user");
 const posts = ref([]);
-const now = new Date();
-const defaultMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
-const month = ref(defaultMonth);
+const monthStorageKey = "we-log-month";
+const normalizeMonth = (value) => {
+  const match = String(value || "").match(/^(\d{4})-(\d{1,2})$/);
+  if (!match) {
+    return "";
+  }
+  const monthNumber = Number(match[2]);
+  if (!monthNumber || monthNumber < 1 || monthNumber > 12) {
+    return "";
+  }
+  return `${match[1]}-${String(monthNumber).padStart(2, "0")}`;
+};
+const getBeijingMonth = () => {
+  const formatter = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Shanghai",
+    year: "numeric",
+    month: "2-digit",
+  });
+  const parts = formatter.formatToParts(new Date());
+  const year = parts.find((part) => part.type === "year")?.value;
+  const monthValue = parts.find((part) => part.type === "month")?.value;
+  const formatted = normalizeMonth(`${year}-${monthValue}`);
+  if (formatted) {
+    return formatted;
+  }
+  const fallback = new Date();
+  return normalizeMonth(`${fallback.getFullYear()}-${fallback.getMonth() + 1}`);
+};
+const storedMonth = normalizeMonth(localStorage.getItem(monthStorageKey));
+const month = ref(storedMonth || getBeijingMonth());
 const loading = ref(false);
 const previewImage = ref("");
+
+if (month.value) {
+  localStorage.setItem(monthStorageKey, month.value);
+}
 
 const loadPosts = async () => {
   loading.value = true;
@@ -70,7 +125,12 @@ const loadPosts = async () => {
 
 onMounted(loadPosts);
 
-watch(month, () => {
+watch(month, (value) => {
+  if (value) {
+    localStorage.setItem(monthStorageKey, value);
+  } else {
+    localStorage.removeItem(monthStorageKey);
+  }
   loadPosts();
 });
 
@@ -80,5 +140,79 @@ const openPreview = (img) => {
 
 const closePreview = () => {
   previewImage.value = "";
+};
+
+const normalizeComments = (comments = []) => {
+  if (!Array.isArray(comments)) {
+    return [];
+  }
+  return comments.map((comment, index) => {
+    if (typeof comment === "string") {
+      return {
+        id: `comment-${index}`,
+        user: "匿名用户",
+        content: comment,
+        createdAt: "",
+      };
+    }
+    const content = comment?.content ?? comment?.text ?? comment?.comment ?? "";
+    const userName = comment?.user ?? comment?.author ?? comment?.username ?? "匿名用户";
+    const createdAt = comment?.createdAt ?? comment?.time ?? comment?.date ?? "";
+    return {
+      id: comment?.id ?? `${userName}-${index}`,
+      user: userName,
+      content,
+      createdAt,
+    };
+  }).filter((comment) => comment.content);
+};
+
+const toTimestamp = (value) => {
+  if (!value) {
+    return Number.NaN;
+  }
+  const parsed = Date.parse(value);
+  return Number.isNaN(parsed) ? Number.NaN : parsed;
+};
+
+const getLatestComments = (comments = []) => {
+  const normalized = normalizeComments(comments);
+  if (normalized.length <= 2) {
+    return normalized;
+  }
+  const withTimestamp = normalized.map((comment, index) => ({
+    ...comment,
+    timestamp: toTimestamp(comment.createdAt),
+    index,
+  }));
+  const hasTimestamp = withTimestamp.some((comment) => Number.isFinite(comment.timestamp));
+  if (hasTimestamp) {
+    return withTimestamp
+      .sort((a, b) => {
+        if (Number.isFinite(a.timestamp) && Number.isFinite(b.timestamp)) {
+          return b.timestamp - a.timestamp;
+        }
+        if (Number.isFinite(a.timestamp)) {
+          return -1;
+        }
+        if (Number.isFinite(b.timestamp)) {
+          return 1;
+        }
+        return b.index - a.index;
+      })
+      .slice(0, 2)
+      .map(({ timestamp, index, ...rest }) => rest);
+  }
+  return normalized.slice(-2).reverse();
+};
+
+const hasComments = (comments = []) => getLatestComments(comments).length > 0;
+
+const formatCommentText = (text) => {
+  const value = String(text || "").trim();
+  if (value.length <= 100) {
+    return value;
+  }
+  return `${value.slice(0, 100)}...`;
 };
 </script>

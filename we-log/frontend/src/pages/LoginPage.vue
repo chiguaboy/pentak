@@ -43,12 +43,52 @@ const plate = ref("");
 const parkingLot = ref("福田中心停车场");
 const password = ref("");
 const error = ref("");
+const monthStorageKey = "we-log-month";
+
+const normalizeMonth = (value) => {
+  const match = String(value || "").match(/^(\d{4})-(\d{1,2})$/);
+  if (!match) {
+    return "";
+  }
+  const monthNumber = Number(match[2]);
+  if (!monthNumber || monthNumber < 1 || monthNumber > 12) {
+    return "";
+  }
+  return `${match[1]}-${String(monthNumber).padStart(2, "0")}`;
+};
+
+const getBeijingMonth = () => {
+  const formatter = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Shanghai",
+    year: "numeric",
+    month: "2-digit",
+  });
+  const parts = formatter.formatToParts(new Date());
+  const year = parts.find((part) => part.type === "year")?.value;
+  const monthValue = parts.find((part) => part.type === "month")?.value;
+  const formatted = normalizeMonth(`${year}-${monthValue}`);
+  if (formatted) {
+    return formatted;
+  }
+  const fallback = new Date();
+  return normalizeMonth(`${fallback.getFullYear()}-${fallback.getMonth() + 1}`);
+};
+
+const ensureMonthStorage = () => {
+  const stored = normalizeMonth(localStorage.getItem(monthStorageKey));
+  const month = stored || getBeijingMonth();
+  if (month) {
+    localStorage.setItem(monthStorageKey, month);
+  }
+  return month;
+};
 
 const handleLogin = async () => {
   error.value = "";
   try {
     const result = await login(password.value.trim());
     localStorage.setItem("we-log-user", result.user);
+    ensureMonthStorage();
     router.push("/feed");
   } catch (err) {
     error.value = err.response?.data?.message || "登录失败";

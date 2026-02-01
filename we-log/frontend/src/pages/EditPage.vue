@@ -1,8 +1,12 @@
 <template>
   <div class="page-container">
+    <Teleport to="#top-bar-slot">
+      <div class="top-bar-left">
+        <RouterLink to="/feed" class="top-bar-button">返回</RouterLink>
+      </div>
+    </Teleport>
     <div class="page-header">
       <div class="page-title">编辑动态</div>
-      <RouterLink to="/feed" class="button-secondary">返回</RouterLink>
     </div>
 
     <div v-if="loading" class="card-subtitle">加载中...</div>
@@ -50,6 +54,39 @@ import { fetchPost, updatePost } from "../services/api";
 
 const route = useRoute();
 const router = useRouter();
+const monthStorageKey = "we-log-month";
+const normalizeMonth = (value) => {
+  const match = String(value || "").match(/^(\d{4})-(\d{1,2})$/);
+  if (!match) {
+    return "";
+  }
+  const monthNumber = Number(match[2]);
+  if (!monthNumber || monthNumber < 1 || monthNumber > 12) {
+    return "";
+  }
+  return `${match[1]}-${String(monthNumber).padStart(2, "0")}`;
+};
+const getBeijingMonth = () => {
+  const formatter = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Shanghai",
+    year: "numeric",
+    month: "2-digit",
+  });
+  const parts = formatter.formatToParts(new Date());
+  const year = parts.find((part) => part.type === "year")?.value;
+  const monthValue = parts.find((part) => part.type === "month")?.value;
+  const formatted = normalizeMonth(`${year}-${monthValue}`);
+  if (formatted) {
+    return formatted;
+  }
+  const fallback = new Date();
+  return normalizeMonth(`${fallback.getFullYear()}-${fallback.getMonth() + 1}`);
+};
+const month = ref(
+  normalizeMonth(route.query.month)
+  || normalizeMonth(localStorage.getItem(monthStorageKey))
+  || getBeijingMonth(),
+);
 const loading = ref(false);
 const content = ref("");
 const images = ref([]);
@@ -74,7 +111,7 @@ const toBase64 = (file) => new Promise((resolve, reject) => {
 const loadPost = async () => {
   loading.value = true;
   try {
-    const data = await fetchPost(route.params.id);
+    const data = await fetchPost(route.params.id, month.value);
     original.value = { content: data.content, images: data.images || [] };
     content.value = data.content;
     images.value = data.images || [];
@@ -93,10 +130,10 @@ const save = async () => {
   await updatePost(route.params.id, {
     content: content.value.trim(),
     images: images.value,
-  });
+  }, month.value);
   message.value = "保存成功";
   setTimeout(() => {
-    router.push(`/detail/${route.params.id}`);
+    router.push({ path: `/detail/${route.params.id}`, query: { month: month.value } });
   }, 800);
 };
 
