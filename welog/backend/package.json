@@ -1,0 +1,17 @@
+{
+  "name": "welog-backend",
+  "version": "1.0.0",
+  "description": "WeLog backend",
+  "main": "server.js",
+  "type": "module",
+  "scripts": {
+    "start": "node server.js",
+    "migrate:images": "node scripts/migrate-images.js"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.19.2",
+    "nanoid": "^5.0.7",
+    "sharp": "^0.33.2"
+  }
+}
