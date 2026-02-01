@@ -20,7 +20,7 @@ const router = createRouter({
 });
 
 router.beforeEach((to, from, next) => {
-  const user = localStorage.getItem("we-log-user");
+  const user = localStorage.getItem("welog-user");
   if (to.path !== "/login" && !user) {
     next("/login");
   } else {

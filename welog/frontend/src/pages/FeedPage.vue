@@ -28,17 +28,17 @@
             <div class="card-subtitle">{{ post.createdAt }}</div>
           </div>
           <div class="card-actions">
+                        <RouterLink
+              :to="{ path: `/edit/${post.id}`, query: { month } }"
+              class="link-button"
+            >
+              编辑
+            </RouterLink>
             <RouterLink
               :to="{ path: `/detail/${post.id}`, query: { month } }"
               class="link-button"
             >
               查看
-            </RouterLink>
-            <RouterLink
-              :to="{ path: `/edit/${post.id}`, query: { month } }"
-              class="link-button"
-            >
-              编辑
             </RouterLink>
           </div>
         </div>
@@ -47,9 +47,9 @@
           <img
             v-for="(img, index) in post.images.slice(0, 3)"
             :key="index"
-            :src="img"
+            :src="getImageThumb(img)"
             alt="图片"
-            @click="openPreview(img)"
+            @click="openPreview(getImageUrl(img))"
           />
         </div>
         <div v-if="hasComments(post.comments)" class="card-comments">
@@ -58,15 +58,23 @@
             :key="comment.id || `${post.id}-comment-${index}`"
             class="card-comment"
           >
-            <span class="card-comment-user">{{ comment.user }}</span>
-            <span class="card-comment-separator">：</span>
+            <span class="card-comment-user">{{ `@${comment.user}` }}</span>
+            <span class="card-comment-separator">:</span>
             <span class="card-comment-content">{{ formatCommentText(comment.content) }}</span>
           </div>
         </div>
       </div>
     </div>
     <div v-if="previewImage" class="image-preview-overlay" @click="closePreview">
-      <img :src="previewImage" alt="预览图片" class="image-preview" />
+      <div v-if="previewLoading" class="image-preview-loading"></div>
+      <img
+        :src="previewImage"
+        alt="预览图片"
+        class="image-preview"
+        :class="{ 'is-loading': previewLoading }"
+        @load="handlePreviewLoaded"
+        @error="handlePreviewLoaded"
+      />
     </div>
   </div>
 </template>
@@ -74,10 +82,11 @@
 <script setup>
 import { onMounted, ref, watch } from "vue";
 import { fetchPosts } from "../services/api";
+import { resolveImageSrc } from "../utils/image";
 
-const user = localStorage.getItem("we-log-user");
+const user = localStorage.getItem("welog-user");
 const posts = ref([]);
-const monthStorageKey = "we-log-month";
+const monthStorageKey = "welog-month";
 const normalizeMonth = (value) => {
   const match = String(value || "").match(/^(\d{4})-(\d{1,2})$/);
   if (!match) {
@@ -109,6 +118,7 @@ const storedMonth = normalizeMonth(localStorage.getItem(monthStorageKey));
 const month = ref(storedMonth || getBeijingMonth());
 const loading = ref(false);
 const previewImage = ref("");
+const previewLoading = ref(false);
 
 if (month.value) {
   localStorage.setItem(monthStorageKey, month.value);
@@ -136,10 +146,16 @@ watch(month, (value) => {
 
 const openPreview = (img) => {
   previewImage.value = img;
+  previewLoading.value = true;
 };
 
 const closePreview = () => {
   previewImage.value = "";
+  previewLoading.value = false;
+};
+
+const handlePreviewLoaded = () => {
+  previewLoading.value = false;
 };
 
 const normalizeComments = (comments = []) => {
@@ -214,5 +230,19 @@ const formatCommentText = (text) => {
     return value;
   }
   return `${value.slice(0, 100)}...`;
+};
+
+const getImageThumb = (image) => {
+  if (typeof image === "string") {
+    return resolveImageSrc(image);
+  }
+  return resolveImageSrc(image?.thumbUrl || image?.url || "");
+};
+
+const getImageUrl = (image) => {
+  if (typeof image === "string") {
+    return resolveImageSrc(image);
+  }
+  return resolveImageSrc(image?.url || image?.thumbUrl || "");
 };
 </script>

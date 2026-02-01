@@ -12,10 +12,10 @@
       </div>
     </Teleport>
     <div class="page-header">
-      <div>
+      <!-- <div>
         <div class="page-title">动态详情</div>
         <p class="card-subtitle">查看完整图文内容</p>
-      </div>
+      </div> -->
     </div>
 
     <div v-if="loading" class="card-subtitle">加载中...</div>
@@ -28,9 +28,9 @@
         <img
           v-for="(img, index) in post.images"
           :key="index"
-          :src="img"
+          :src="getImageUrl(img)"
           alt="图片"
-          @click="openPreview(img)"
+          @click="openPreview(getImageUrl(img))"
         />
       </div>
       <div class="detail-comments">
@@ -55,7 +55,7 @@
           <div class="detail-comment-actions">
             <span class="helper-text">{{ commentInput.length }}/100</span>
             <button class="button-primary" type="button" :disabled="commentLoading" @click="submitComment">
-              {{ commentLoading ? "发布中..." : "发布" }}
+              {{ commentLoading ? "发布中..." : "发布评论" }}
             </button>
           </div>
           <p v-if="commentMessage" class="helper-text" style="color: var(--color-accent);">
@@ -65,7 +65,15 @@
       </div>
     </div>
     <div v-if="previewImage" class="image-preview-overlay" @click="closePreview">
-      <img :src="previewImage" alt="预览图片" class="image-preview" />
+      <div v-if="previewLoading" class="image-preview-loading"></div>
+      <img
+        :src="previewImage"
+        alt="预览图片"
+        class="image-preview"
+        :class="{ 'is-loading': previewLoading }"
+        @load="handlePreviewLoaded"
+        @error="handlePreviewLoaded"
+      />
     </div>
   </div>
 </template>
@@ -74,9 +82,10 @@
 import { computed, onMounted, ref } from "vue";
 import { useRoute } from "vue-router";
 import { fetchPost, updatePost } from "../services/api";
+import { resolveImageSrc } from "../utils/image";
 
 const route = useRoute();
-const monthStorageKey = "we-log-month";
+const monthStorageKey = "welog-month";
 const normalizeMonth = (value) => {
   const match = String(value || "").match(/^(\d{4})-(\d{1,2})$/);
   if (!match) {
@@ -112,6 +121,7 @@ const month = ref(
 const post = ref(null);
 const loading = ref(false);
 const previewImage = ref("");
+const previewLoading = ref(false);
 const commentInput = ref("");
 const commentLoading = ref(false);
 const commentMessage = ref("");
@@ -129,10 +139,16 @@ onMounted(loadPost);
 
 const openPreview = (img) => {
   previewImage.value = img;
+  previewLoading.value = true;
 };
 
 const closePreview = () => {
   previewImage.value = "";
+  previewLoading.value = false;
+};
+
+const handlePreviewLoaded = () => {
+  previewLoading.value = false;
 };
 
 const normalizeComments = (comments = []) => {
@@ -161,12 +177,36 @@ const normalizeComments = (comments = []) => {
 
 const normalizedComments = computed(() => normalizeComments(post.value?.comments));
 
+const formatBeijingTime = (date = new Date()) => {
+  const formatter = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Shanghai",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  });
+  const parts = formatter.formatToParts(date).reduce((acc, part) => {
+    acc[part.type] = part.value;
+    return acc;
+  }, {});
+  return `${parts.year}-${parts.month}-${parts.day} ${parts.hour}:${parts.minute}`;
+};
+
 const formatCommentText = (text) => {
   const value = String(text || "").trim();
   if (value.length <= 100) {
     return value;
   }
   return `${value.slice(0, 100)}...`;
+};
+
+const getImageUrl = (image) => {
+  if (typeof image === "string") {
+    return resolveImageSrc(image);
+  }
+  return resolveImageSrc(image?.url || image?.thumbUrl || "");
 };
 
 const submitComment = async () => {
@@ -181,8 +221,8 @@ const submitComment = async () => {
   }
   commentLoading.value = true;
   try {
-    const user = localStorage.getItem("we-log-user") || "匿名用户";
-    const createdAt = new Date().toISOString().slice(0, 16).replace("T", " ");
+    const user = localStorage.getItem("welog-user") || "匿名用户";
+    const createdAt = formatBeijingTime();
     const newComment = {
       id: `comment-${Date.now()}`,
       user,
