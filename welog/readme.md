@@ -69,7 +69,7 @@ npm run build
 创建并编辑 Nginx 配置：
 
 ```bash
-cat >/etc/nginx/sites-available/welog <<'EOF'
+cat >/etc/nginx/sites-available/config <<'EOF'
 server {
     listen 80;
     server_name 你的域名或公网IP;
@@ -110,7 +110,7 @@ EOF
 启用配置并重启 Nginx：
 
 ```bash
-ln -s /etc/nginx/sites-available/welog /etc/nginx/sites-enabled/welog
+ln -s /etc/nginx/sites-available/config /etc/nginx/sites-enabled/config
 nginx -t
 systemctl restart nginx
 ```

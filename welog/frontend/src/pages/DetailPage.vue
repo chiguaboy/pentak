@@ -82,7 +82,7 @@
 import { computed, onMounted, ref } from "vue";
 import { useRoute } from "vue-router";
 import { fetchPost, updatePost } from "../services/api";
-import { resolveImageSrc } from "../utils/image";
+import { resolveImageSrc } from "../helpers/image";
 
 const route = useRoute();
 const monthStorageKey = "welog-month";

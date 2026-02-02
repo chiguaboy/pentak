@@ -67,7 +67,7 @@
 import { onMounted, ref } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { fetchPost, updatePost, uploadImage } from "../services/api";
-import { resolveImageSrc } from "../utils/image";
+import { resolveImageSrc } from "../helpers/image";
 
 const route = useRoute();
 const router = useRouter();
@@ -118,6 +118,7 @@ const handleFiles = async (event) => {
   if (uploading.value) {
     return;
   }
+  message.value = "";
   const files = Array.from(event.target.files || []);
   if (files.length === 0) {
     return;
@@ -128,11 +129,17 @@ const handleFiles = async (event) => {
     const selectedFiles = files.slice(0, remainingSlots);
     const uploaded = await Promise.all(
       selectedFiles.map(async (file) => {
-        const base64 = await toBase64(file);
-        return uploadImage(base64);
+        try {
+          const base64 = await toBase64(file);
+          return await uploadImage(base64);
+        } catch (err) {
+          message.value = err?.response?.data?.message || "图片格式不支持，请尝试截图重新上传";
+          return null;
+        }
       }),
     );
-    images.value = [...images.value, ...uploaded].slice(0, 9);
+    const successful = uploaded.filter(Boolean);
+    images.value = [...images.value, ...successful].slice(0, 9);
   } finally {
     uploading.value = false;
     event.target.value = "";

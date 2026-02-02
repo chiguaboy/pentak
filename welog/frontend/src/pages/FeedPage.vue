@@ -82,7 +82,7 @@
 <script setup>
 import { onMounted, ref, watch } from "vue";
 import { fetchPosts } from "../services/api";
-import { resolveImageSrc } from "../utils/image";
+import { resolveImageSrc } from "../helpers/image";
 
 const user = localStorage.getItem("welog-user");
 const posts = ref([]);

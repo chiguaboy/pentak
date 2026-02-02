@@ -329,6 +329,7 @@ registerApiRoute("post", "/uploads", async (req, res) => {
   await ensureDir(IMAGES_DIR);
   await ensureDir(THUMBS_DIR);
   const urls = [];
+  const savedFiles = [];
   for (const item of toUpload) {
     const parsed = parseBase64Image(item);
     if (!parsed) {
@@ -337,18 +338,32 @@ registerApiRoute("post", "/uploads", async (req, res) => {
     const baseName = nanoid();
     const filename = `${baseName}.${parsed.ext}`;
     const thumbFilename = `${baseName}_thumb.${parsed.ext}`;
-    await fs.writeFile(path.join(IMAGES_DIR, filename), parsed.buffer);
-    const sharpInstance = sharp(parsed.buffer).resize({
-      width: 480,
-      withoutEnlargement: true,
-    });
-    if (parsed.ext === "png") {
-      await sharpInstance.png({ compressionLevel: 8 }).toFile(path.join(THUMBS_DIR, thumbFilename));
-    } else if (parsed.ext === "webp") {
-      await sharpInstance.webp({ quality: 72 }).toFile(path.join(THUMBS_DIR, thumbFilename));
-    } else {
-      await sharpInstance.jpeg({ quality: 72 }).toFile(path.join(THUMBS_DIR, thumbFilename));
+    const filePath = path.join(IMAGES_DIR, filename);
+    const thumbPath = path.join(THUMBS_DIR, thumbFilename);
+    await fs.writeFile(filePath, parsed.buffer);
+    try {
+      const sharpInstance = sharp(parsed.buffer).resize({
+        width: 480,
+        withoutEnlargement: true,
+      });
+      if (parsed.ext === "png") {
+        await sharpInstance.png({ compressionLevel: 8 }).toFile(thumbPath);
+      } else if (parsed.ext === "webp") {
+        await sharpInstance.webp({ quality: 72 }).toFile(thumbPath);
+      } else {
+        await sharpInstance.jpeg({ quality: 72 }).toFile(thumbPath);
+      }
+    } catch (err) {
+      const cleanupTargets = [...savedFiles, { filePath, thumbPath }];
+      await Promise.allSettled(
+        cleanupTargets.map(async ({ filePath: currentFile, thumbPath: currentThumb }) => {
+          await fs.unlink(currentFile).catch(() => {});
+          await fs.unlink(currentThumb).catch(() => {});
+        }),
+      );
+      return res.status(400).json({ message: "图片格式不支持，请尝试截图重新上传" });
     }
+    savedFiles.push({ filePath, thumbPath });
     urls.push({
       url: buildImageUrl(filename),
       thumbUrl: `/welog/images/thumbs/${thumbFilename}`,
