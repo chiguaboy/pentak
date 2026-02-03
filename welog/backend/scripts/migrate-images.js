@@ -69,7 +69,7 @@ const ensureThumb = async (originalPath, filename, ext) => {
   }
   await ensureDir(path.join(imagesDir, "thumbs"));
   const buffer = await fs.readFile(originalPath);
-  const sharpInstance = sharp(buffer).resize({ width: 480, withoutEnlargement: true });
+  const sharpInstance = sharp(buffer).rotate().resize({ width: 480, withoutEnlargement: true });
   if (ext === "png") {
     await sharpInstance.png({ compressionLevel: 8 }).toFile(thumbPath);
   } else if (ext === "webp") {
@@ -153,7 +153,7 @@ const migrateFile = async (filePath) => {
         const filename = `${baseName}.${parsed.ext}`;
         const thumbFilename = `${baseName}_thumb.${parsed.ext}`;
         await fs.writeFile(path.join(imagesDir, filename), parsed.buffer);
-        const sharpInstance = sharp(parsed.buffer).resize({ width: 480, withoutEnlargement: true });
+        const sharpInstance = sharp(parsed.buffer).rotate().resize({ width: 480, withoutEnlargement: true });
         if (parsed.ext === "png") {
           await sharpInstance.png({ compressionLevel: 8 }).toFile(path.join(imagesDir, "thumbs", thumbFilename));
         } else if (parsed.ext === "webp") {

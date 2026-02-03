@@ -49,7 +49,7 @@
             :key="index"
             :src="getImageThumb(img)"
             alt="图片"
-            @click="openPreview(getImageUrl(img))"
+            @click="openPreview(post.images, index)"
           />
         </div>
         <div v-if="hasComments(post.comments)" class="card-comments">
@@ -65,17 +65,12 @@
         </div>
       </div>
     </div>
-    <div v-if="previewImage" class="image-preview-overlay" @click="closePreview">
-      <div v-if="previewLoading" class="image-preview-loading"></div>
-      <img
-        :src="previewImage"
-        alt="预览图片"
-        class="image-preview"
-        :class="{ 'is-loading': previewLoading }"
-        @load="handlePreviewLoaded"
-        @error="handlePreviewLoaded"
-      />
-    </div>
+    <ImagePreviewer
+      :images="previewImages"
+      :startIndex="previewIndex"
+      :visible="previewImages.length > 0"
+      @close="closePreview"
+    />
   </div>
 </template>
 
@@ -83,6 +78,7 @@
 import { onMounted, ref, watch } from "vue";
 import { fetchPosts } from "../services/api";
 import { resolveImageSrc } from "../helpers/image";
+import ImagePreviewer from "../components/ImagePreviewer.vue";
 
 const user = localStorage.getItem("welog-user");
 const posts = ref([]);
@@ -117,8 +113,8 @@ const getBeijingMonth = () => {
 const storedMonth = normalizeMonth(localStorage.getItem(monthStorageKey));
 const month = ref(storedMonth || getBeijingMonth());
 const loading = ref(false);
-const previewImage = ref("");
-const previewLoading = ref(false);
+const previewImages = ref([]);
+const previewIndex = ref(0);
 
 if (month.value) {
   localStorage.setItem(monthStorageKey, month.value);
@@ -144,18 +140,16 @@ watch(month, (value) => {
   loadPosts();
 });
 
-const openPreview = (img) => {
-  previewImage.value = img;
-  previewLoading.value = true;
+const buildPreviewImages = (images = []) => images.map((image) => getImageUrl(image));
+
+const openPreview = (images, index) => {
+  previewImages.value = buildPreviewImages(images);
+  previewIndex.value = index;
 };
 
 const closePreview = () => {
-  previewImage.value = "";
-  previewLoading.value = false;
-};
-
-const handlePreviewLoaded = () => {
-  previewLoading.value = false;
+  previewImages.value = [];
+  previewIndex.value = 0;
 };
 
 const normalizeComments = (comments = []) => {

@@ -620,13 +620,26 @@ a {
   z-index: 40;
 }
 
+.image-preview-frame {
+  position: relative;
+  width: min(92vw, 720px);
+  height: min(80vh, 680px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  touch-action: none;
+}
+
 .image-preview {
-  max-width: min(92vw, 680px);
-  max-height: 80vh;
+  max-width: 100%;
+  max-height: 100%;
   border-radius: 16px;
   box-shadow: 0 16px 40px rgba(15, 20, 25, 0.3);
   object-fit: contain;
   transition: opacity 0.2s ease, transform 0.2s ease;
+  user-select: none;
+  -webkit-user-drag: none;
 }
 
 .image-preview.is-loading {
@@ -642,6 +655,39 @@ a {
   border: 3px solid rgba(255, 255, 255, 0.35);
   border-top-color: #ffffff;
   animation: image-preview-spin 0.8s linear infinite;
+}
+
+.image-preview-count {
+  position: absolute;
+  right: 16px;
+  bottom: 16px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.45);
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 600;
+  z-index: 100;
+}
+
+.image-preview-close {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(0, 0, 0, 0.45);
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  z-index:100;
+}
+
+.image-preview-close:active {
+  transform: scale(0.96);
 }
 
 @keyframes image-preview-spin {

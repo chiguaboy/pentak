@@ -59,13 +59,14 @@ const formatBeijingTime = (date = new Date()) => {
     day: "2-digit",
     hour: "2-digit",
     minute: "2-digit",
+    second: "2-digit",
     hour12: false,
   });
   const parts = formatter.formatToParts(date).reduce((acc, part) => {
     acc[part.type] = part.value;
     return acc;
   }, {});
-  return `${parts.year}-${parts.month}-${parts.day} ${parts.hour}:${parts.minute}`;
+  return `${parts.year}-${parts.month}-${parts.day} ${parts.hour}:${parts.minute}:${parts.second}`;
 };
 
 const parseBase64Image = (dataUrl) => {
@@ -178,11 +179,48 @@ const normalizeCommentList = (comments) => {
     .filter(Boolean);
 };
 
+const toTimestamp = (value) => {
+  if (!value) {
+    return Number.NaN;
+  }
+  const parsed = Date.parse(value);
+  return Number.isNaN(parsed) ? Number.NaN : parsed;
+};
+
+const sortCommentsByTime = (comments = []) => {
+  if (!Array.isArray(comments) || comments.length <= 1) {
+    return comments || [];
+  }
+  const withTimestamp = comments.map((comment, index) => ({
+    ...comment,
+    timestamp: toTimestamp(comment.createdAt),
+    index,
+  }));
+  const hasTimestamp = withTimestamp.some((comment) => Number.isFinite(comment.timestamp));
+  if (!hasTimestamp) {
+    return comments;
+  }
+  return withTimestamp
+    .sort((a, b) => {
+      if (Number.isFinite(a.timestamp) && Number.isFinite(b.timestamp)) {
+        return b.timestamp - a.timestamp;
+      }
+      if (Number.isFinite(a.timestamp)) {
+        return -1;
+      }
+      if (Number.isFinite(b.timestamp)) {
+        return 1;
+      }
+      return b.index - a.index;
+    })
+    .map(({ timestamp, index, ...rest }) => rest);
+};
+
 const normalizePost = (post) => {
   if (!post) {
     return post;
   }
-  const comments = normalizeCommentList(post.comments);
+  const comments = sortCommentsByTime(normalizeCommentList(post.comments));
   return {
     ...post,
     comments,
@@ -195,7 +233,7 @@ const normalizePostForStorage = (post) => {
   if (!post) {
     return post;
   }
-  const comments = normalizeCommentList(post.comments);
+  const comments = sortCommentsByTime(normalizeCommentList(post.comments));
   return {
     ...post,
     comments,
@@ -274,11 +312,12 @@ const sanitizeComments = (comments) => {
     return null;
   }
   const now = formatBeijingTime();
-  return normalizeCommentList(comments).map((comment, index) => ({
+  const normalized = normalizeCommentList(comments).map((comment, index) => ({
     ...comment,
     id: comment.id || `comment-${Date.now()}-${index}`,
     createdAt: comment.createdAt || now,
   }));
+  return sortCommentsByTime(normalized);
 };
 
 const migrateLegacyPosts = async () => {
@@ -342,7 +381,7 @@ registerApiRoute("post", "/uploads", async (req, res) => {
     const thumbPath = path.join(THUMBS_DIR, thumbFilename);
     await fs.writeFile(filePath, parsed.buffer);
     try {
-      const sharpInstance = sharp(parsed.buffer).resize({
+      const sharpInstance = sharp(parsed.buffer).rotate().resize({
         width: 480,
         withoutEnlargement: true,
       });

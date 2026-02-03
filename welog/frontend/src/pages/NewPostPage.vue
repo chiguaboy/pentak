@@ -25,7 +25,7 @@
       <input type="file" accept="image/*" multiple class="file-input" @change="handleFiles" />
       <div class="preview-list">
         <div v-for="(img, index) in images" :key="index" class="preview-wrap">
-          <img :src="getImageThumb(img)" class="preview-item" @click="openPreview(img)" />
+          <img :src="getImageThumb(img)" class="preview-item" @click="openPreview(index)" />
           <button type="button" class="preview-remove" @click="removeImage(index)">-</button>
         </div>
       </div>
@@ -42,17 +42,12 @@
     <p v-if="message" class="helper-text" style="color: #1d9bf0; margin-top: 12px;">
       {{ message }}
     </p>
-    <div v-if="previewImage" class="image-preview-overlay" @click="closePreview">
-      <div v-if="previewLoading" class="image-preview-loading"></div>
-      <img
-        :src="previewImage"
-        alt="预览图片"
-        class="image-preview"
-        :class="{ 'is-loading': previewLoading }"
-        @load="handlePreviewLoaded"
-        @error="handlePreviewLoaded"
-      />
-    </div>
+    <ImagePreviewer
+      :images="previewImages"
+      :startIndex="previewIndex"
+      :visible="previewImages.length > 0"
+      @close="closePreview"
+    />
   </div>
 </template>
 
@@ -61,6 +56,7 @@ import { ref } from "vue";
 import { useRouter } from "vue-router";
 import { createPost, uploadImage } from "../services/api";
 import { resolveImageSrc } from "../helpers/image";
+import ImagePreviewer from "../components/ImagePreviewer.vue";
 
 const router = useRouter();
 const content = ref("");
@@ -68,8 +64,8 @@ const images = ref([]);
 const message = ref("");
 const submitting = ref(false);
 const uploading = ref(false);
-const previewImage = ref("");
-const previewLoading = ref(false);
+const previewImages = ref([]);
+const previewIndex = ref(0);
 const monthStorageKey = "welog-month";
 const normalizeMonth = (value) => {
   const match = String(value || "").match(/^(\d{4})-(\d{1,2})$/);
@@ -197,17 +193,13 @@ const getImageUrl = (image) => {
   return resolveImageSrc(image?.url || image?.thumbUrl || "");
 };
 
-const openPreview = (image) => {
-  previewImage.value = getImageUrl(image);
-  previewLoading.value = true;
+const openPreview = (index) => {
+  previewImages.value = images.value.map((img) => getImageUrl(img));
+  previewIndex.value = index;
 };
 
 const closePreview = () => {
-  previewImage.value = "";
-  previewLoading.value = false;
-};
-
-const handlePreviewLoaded = () => {
-  previewLoading.value = false;
+  previewImages.value = [];
+  previewIndex.value = 0;
 };
 </script>

@@ -29,7 +29,7 @@
             <img
               :src="getImageThumb(img)"
               class="preview-item"
-              @click="openPreview(getImageUrl(img))"
+              @click="openPreview(index)"
             />
             <button type="button" class="preview-remove" @click="removeImage(index)">-</button>
           </div>
@@ -49,17 +49,12 @@
         {{ message }}
       </p>
     </div>
-    <div v-if="previewImage" class="image-preview-overlay" @click="closePreview">
-      <div v-if="previewLoading" class="image-preview-loading"></div>
-      <img
-        :src="previewImage"
-        alt="预览图片"
-        class="image-preview"
-        :class="{ 'is-loading': previewLoading }"
-        @load="handlePreviewLoaded"
-        @error="handlePreviewLoaded"
-      />
-    </div>
+    <ImagePreviewer
+      :images="previewImages"
+      :startIndex="previewIndex"
+      :visible="previewImages.length > 0"
+      @close="closePreview"
+    />
   </div>
 </template>
 
@@ -68,6 +63,7 @@ import { onMounted, ref } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { fetchPost, updatePost, uploadImage } from "../services/api";
 import { resolveImageSrc } from "../helpers/image";
+import ImagePreviewer from "../components/ImagePreviewer.vue";
 
 const route = useRoute();
 const router = useRouter();
@@ -111,8 +107,8 @@ const original = ref({ content: "", images: [] });
 const message = ref("");
 const saving = ref(false);
 const uploading = ref(false);
-const previewImage = ref("");
-const previewLoading = ref(false);
+const previewImages = ref([]);
+const previewIndex = ref(0);
 
 const handleFiles = async (event) => {
   if (uploading.value) {
@@ -195,18 +191,14 @@ const save = async () => {
 
 onMounted(loadPost);
 
-const openPreview = (img) => {
-  previewImage.value = img;
-  previewLoading.value = true;
+const openPreview = (index) => {
+  previewImages.value = images.value.map((img) => getImageUrl(img));
+  previewIndex.value = index;
 };
 
 const closePreview = () => {
-  previewImage.value = "";
-  previewLoading.value = false;
-};
-
-const handlePreviewLoaded = () => {
-  previewLoading.value = false;
+  previewImages.value = [];
+  previewIndex.value = 0;
 };
 
 const removeImage = (index) => {

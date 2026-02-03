@@ -30,7 +30,7 @@
           :key="index"
           :src="getImageUrl(img)"
           alt="图片"
-          @click="openPreview(getImageUrl(img))"
+          @click="openPreview(index)"
         />
       </div>
       <div class="detail-comments">
@@ -64,17 +64,12 @@
         </div>
       </div>
     </div>
-    <div v-if="previewImage" class="image-preview-overlay" @click="closePreview">
-      <div v-if="previewLoading" class="image-preview-loading"></div>
-      <img
-        :src="previewImage"
-        alt="预览图片"
-        class="image-preview"
-        :class="{ 'is-loading': previewLoading }"
-        @load="handlePreviewLoaded"
-        @error="handlePreviewLoaded"
-      />
-    </div>
+    <ImagePreviewer
+      :images="previewImages"
+      :startIndex="previewIndex"
+      :visible="previewImages.length > 0"
+      @close="closePreview"
+    />
   </div>
 </template>
 
@@ -83,6 +78,7 @@ import { computed, onMounted, ref } from "vue";
 import { useRoute } from "vue-router";
 import { fetchPost, updatePost } from "../services/api";
 import { resolveImageSrc } from "../helpers/image";
+import ImagePreviewer from "../components/ImagePreviewer.vue";
 
 const route = useRoute();
 const monthStorageKey = "welog-month";
@@ -120,8 +116,8 @@ const month = ref(
 );
 const post = ref(null);
 const loading = ref(false);
-const previewImage = ref("");
-const previewLoading = ref(false);
+const previewImages = ref([]);
+const previewIndex = ref(0);
 const commentInput = ref("");
 const commentLoading = ref(false);
 const commentMessage = ref("");
@@ -137,18 +133,14 @@ const loadPost = async () => {
 
 onMounted(loadPost);
 
-const openPreview = (img) => {
-  previewImage.value = img;
-  previewLoading.value = true;
+const openPreview = (index) => {
+  previewImages.value = (post.value?.images || []).map((img) => getImageUrl(img));
+  previewIndex.value = index;
 };
 
 const closePreview = () => {
-  previewImage.value = "";
-  previewLoading.value = false;
-};
-
-const handlePreviewLoaded = () => {
-  previewLoading.value = false;
+  previewImages.value = [];
+  previewIndex.value = 0;
 };
 
 const normalizeComments = (comments = []) => {
@@ -175,7 +167,45 @@ const normalizeComments = (comments = []) => {
     .filter((comment) => comment.content);
 };
 
-const normalizedComments = computed(() => normalizeComments(post.value?.comments));
+const toTimestamp = (value) => {
+  if (!value) {
+    return Number.NaN;
+  }
+  const parsed = Date.parse(value);
+  return Number.isNaN(parsed) ? Number.NaN : parsed;
+};
+
+const sortCommentsByTime = (comments = []) => {
+  const normalized = normalizeComments(comments);
+  if (normalized.length <= 1) {
+    return normalized;
+  }
+  const withTimestamp = normalized.map((comment, index) => ({
+    ...comment,
+    timestamp: toTimestamp(comment.createdAt),
+    index,
+  }));
+  const hasTimestamp = withTimestamp.some((comment) => Number.isFinite(comment.timestamp));
+  if (!hasTimestamp) {
+    return normalized;
+  }
+  return withTimestamp
+    .sort((a, b) => {
+      if (Number.isFinite(a.timestamp) && Number.isFinite(b.timestamp)) {
+        return b.timestamp - a.timestamp;
+      }
+      if (Number.isFinite(a.timestamp)) {
+        return -1;
+      }
+      if (Number.isFinite(b.timestamp)) {
+        return 1;
+      }
+      return b.index - a.index;
+    })
+    .map(({ timestamp, index, ...rest }) => rest);
+};
+
+const normalizedComments = computed(() => sortCommentsByTime(post.value?.comments));
 
 const formatBeijingTime = (date = new Date()) => {
   const formatter = new Intl.DateTimeFormat("en-CA", {
@@ -185,13 +215,14 @@ const formatBeijingTime = (date = new Date()) => {
     day: "2-digit",
     hour: "2-digit",
     minute: "2-digit",
+    second: "2-digit",
     hour12: false,
   });
   const parts = formatter.formatToParts(date).reduce((acc, part) => {
     acc[part.type] = part.value;
     return acc;
   }, {});
-  return `${parts.year}-${parts.month}-${parts.day} ${parts.hour}:${parts.minute}`;
+  return `${parts.year}-${parts.month}-${parts.day} ${parts.hour}:${parts.minute}:${parts.second}`;
 };
 
 const formatCommentText = (text) => {
