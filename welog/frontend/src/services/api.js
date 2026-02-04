@@ -46,4 +46,14 @@ export const uploadImage = async (image) => {
   return data;
 };
 
+export const fetchMessages = async (month) => {
+  const { data } = await api.get("/messages", { params: { month } });
+  return data;
+};
+
+export const createMessage = async (payload, month) => {
+  const { data } = await api.post("/messages", { ...payload, month });
+  return data;
+};
+
 export default api;

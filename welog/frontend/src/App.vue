@@ -4,11 +4,18 @@
       <div class="top-bar-content">
         <div id="top-bar-slot"></div>
         <div class="top-bar-actions">
-          <button class="home-button" type="button" @click="router.replace('/login')">
-            Login
+          <button class="home-button" type="button" @click="router.replace('/board')">
+          入场
           </button>
+          <button class="home-button" type="button" @click="router.replace('/feed')">
+            缴费
+          </button>
+
           <button class="theme-toggle" type="button" @click="toggleTheme">
             {{ themeLabel }}
+          </button>
+                    <button class="home-button" type="button" @click="router.replace('/login')">
+            查询
           </button>
         </div>
       </div>
@@ -34,7 +41,7 @@ const showNav = computed(() => !isLogin.value);
 const showFab = computed(() => route.path === "/feed");
 const themeStorageKey = "welog-theme";
 const theme = ref(localStorage.getItem(themeStorageKey) === "dark" ? "dark" : "light");
-const themeLabel = computed(() => (theme.value === "light" ? "暗黑模式" : "浅色模式"));
+const themeLabel = computed(() => (theme.value === "light" ? "灯光" : "灯光"));
 const logoutFlagKey = "welog-logout-pending";
 const lastRouteKey = "welog-last-route";
 const visibilityThrottleMs = 300;

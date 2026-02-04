@@ -1,5 +1,6 @@
 import { createRouter, createWebHistory } from "vue-router";
 import LoginPage from "./pages/LoginPage.vue";
+import MessageBoardPage from "./pages/MessageBoardPage.vue";
 import FeedPage from "./pages/FeedPage.vue";
 import NewPostPage from "./pages/NewPostPage.vue";
 import DetailPage from "./pages/DetailPage.vue";
@@ -8,6 +9,7 @@ import EditPage from "./pages/EditPage.vue";
 const routes = [
   { path: "/", redirect: "/login" },
   { path: "/login", component: LoginPage },
+  { path: "/board", component: MessageBoardPage },
   { path: "/feed", component: FeedPage },
   { path: "/new", component: NewPostPage },
   { path: "/detail/:id", component: DetailPage },

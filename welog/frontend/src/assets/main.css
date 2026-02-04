@@ -258,7 +258,7 @@ a {
 }
 
 .textarea-field {
-  min-height: 160px;
+  min-height: 40px;
   resize: vertical;
 }
 
@@ -479,6 +479,22 @@ a {
   display: flex;
   align-items: center;
   justify-content: space-between;
+}
+
+.message-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.message-user {
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.message-time {
+  font-size: 12px;
+  color: var(--color-muted);
 }
 
 .login-shell {

@@ -17,6 +17,8 @@ const THUMBS_DIR = path.join(IMAGES_DIR, "thumbs");
 const LEGACY_DATA_FILE = path.join(DATA_DIR, "posts.json");
 const MONTH_FILE_PREFIX = "posts-";
 const MONTH_FILE_RE = /^posts-(\d{4}-\d{2})\.json$/;
+const MESSAGE_FILE_PREFIX = "messages-";
+const MESSAGE_MONTH_RE = /^messages-(\d{4}-\d{2})\.json$/;
 const USERS_FILE = path.join(__dirname, "config", "users.json");
 
 app.use(cors());
@@ -113,6 +115,21 @@ const getMonthFromPost = (post) => {
   }
   return getMonthKey(post.createdAt || post.updatedAt);
 };
+
+const sanitizeMessageText = (value) => String(value || "").trim().slice(0, 100);
+
+const getMessageFile = (month) => path.join(DATA_DIR, `${MESSAGE_FILE_PREFIX}${month}.json`);
+
+const readMonthlyMessages = async (month) => {
+  if (!month) {
+    return [];
+  }
+  const filePath = getMessageFile(month);
+  return readJson(filePath, []);
+};
+
+const sortMessagesByTime = (messages) =>
+  (messages || []).slice().sort((a, b) => (b.createdAt || "").localeCompare(a.createdAt || ""));
 
 const getMonthlyFile = (month) => path.join(DATA_DIR, `${MONTH_FILE_PREFIX}${month}.json`);
 
@@ -431,6 +448,38 @@ registerApiRoute("get", "/posts/:id", async (req, res) => {
     return res.status(404).json({ message: "内容不存在" });
   }
   return res.json(normalizePost(location.posts[location.index]));
+});
+
+registerApiRoute("get", "/messages", async (req, res) => {
+  const month = getMonthKey(req.query.month) || getMonthKey(formatBeijingTime());
+  if (!month) {
+    return res.json([]);
+  }
+  const messages = await readMonthlyMessages(month);
+  return res.json(sortMessagesByTime(messages));
+});
+
+registerApiRoute("post", "/messages", async (req, res) => {
+  const { user, content, month } = req.body || {};
+  const sanitizedContent = sanitizeMessageText(content);
+  if (!user || !sanitizedContent) {
+    return res.status(400).json({ message: "缺少必要字段" });
+  }
+  const now = formatBeijingTime();
+  const monthKey = getMonthKey(month) || getMonthKey(now);
+  if (!monthKey) {
+    return res.status(400).json({ message: "月份格式错误" });
+  }
+  const messages = await readMonthlyMessages(monthKey);
+  const message = {
+    id: nanoid(),
+    user,
+    content: sanitizedContent,
+    createdAt: now,
+  };
+  messages.unshift(message);
+  await writeJson(getMessageFile(monthKey), messages);
+  return res.status(201).json(message);
 });
 
 registerApiRoute("post", "/posts", async (req, res) => {

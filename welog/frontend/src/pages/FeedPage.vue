@@ -12,7 +12,7 @@
 
     <div v-if="loading" class="card-subtitle">加载中...</div>
     <div v-else-if="posts.length === 0" class="card-subtitle">暂无动态，快去发布第一条吧。</div>
-    <div v-else>
+    <div v-else style="padding:24px 0px">
       <div
         v-for="post in posts"
         :key="post.id"

@@ -27,7 +27,14 @@
         </div>
         <div class="actions">
           <!-- <button type="button" class="button-secondary" @click="reset">重新输入</button> -->
-          <button type="submit" class="button-primary" :disabled="!canSubmit" style="padding: 8px 22px;font-size: 18px;">查询</button>
+          <button
+            type="submit"
+            class="button-primary"
+            :disabled="!canSubmit || submitting"
+            style="padding: 8px 22px;font-size: 18px;"
+          >
+            {{ submitting ? "查询中..." : "查询" }}
+          </button>
         </div>
         <p v-if="error" class="helper-text" style="color: #e0245e; margin-top: 12px;">
           {{ error }}
@@ -48,6 +55,7 @@ const parkingLot = ref("福田中心停车场");
 const password = ref("");
 const error = ref("");
 const canSubmit = computed(() => password.value.trim().length > 0);
+const submitting = ref(false);
 const monthStorageKey = "welog-month";
 const lastRouteKey = "welog-last-route";
 
@@ -90,8 +98,12 @@ const ensureMonthStorage = () => {
 };
 
 const handleLogin = async () => {
+  if (submitting.value) {
+    return;
+  }
   error.value = "";
   try {
+    submitting.value = true;
     const result = await login(password.value.trim());
     localStorage.setItem("welog-user", result.user);
     ensureMonthStorage();
@@ -101,10 +113,12 @@ const handleLogin = async () => {
       router.replace(lastRoute);
       return;
     }
-    router.replace("/feed");
+    router.replace("/board");
   } catch (err) {
     // error.value= err
     error.value = err.response?.data?.message || "查无此车";
+  } finally {
+    submitting.value = false;
   }
 };
 
